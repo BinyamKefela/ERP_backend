@@ -7,7 +7,6 @@ from django.conf import settings
 # Create your models here.
 
 
-
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.utils import timezone
@@ -19,7 +18,6 @@ import uuid
 from auditlog.registry import auditlog
 
 # Create your models here.
-
 
 
 def validate_uploaded_image_extension(value):
@@ -49,6 +47,24 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, password, **extra_fields)
+
+
+class Company(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    subdomain = models.CharField(max_length=50, unique=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,related_name='company_owner')
+    calendar_type = models.CharField(
+        max_length=10, 
+        choices=[('GREGORIAN', 'Gregorian'), ('ETHIOPIAN', 'Ethiopian')],
+        default='GREGORIAN'
+    )
+    base_currency = models.CharField(max_length=3, default='USD')
+    timezone = models.CharField(max_length=50, default='UTC')
+    
+    def __str__(self):
+        return self.name
     
 
 class User(AbstractBaseUser,PermissionsMixin):
@@ -63,6 +79,8 @@ class User(AbstractBaseUser,PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    is_company_admin = models.BooleanField(default=False)
 
     # Make groups and user_permissions optional by adding blank=True and null=True
     groups = models.ManyToManyField(
@@ -113,6 +131,25 @@ class User(AbstractBaseUser,PermissionsMixin):
 
 auditlog.register(User)
 
+
+class EmailVerification(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Verification for {self.user.email}"
+
+class EmailResetCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    code = models.CharField(max_length=6)
+    is_used = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_expired(self):
+        return timezone.now() > self.created_at + timedelta(minutes=10)
+
+
     
 GENDER_CHOICES = [('M','Male'),('F','Female')]
 MARITAL_STATUS = [('S','Single'),('M','Married'),('D','Divorced'),('W','Widowed')]
@@ -142,6 +179,7 @@ class Employee(models.Model):
     emergency_contact_name = models.CharField(max_length=100,null=True,blank=True)
     emergency_contact_phone = models.CharField(max_length=100,null=True,blank=True)
     emergency_contact_relationship = models.CharField(max_length=100,null=True,blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name} ({self.employee_id})'
@@ -155,6 +193,7 @@ class Department(models.Model):
     parent_department = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     def __str__(self):
         return self.name
@@ -163,11 +202,12 @@ class Position(models.Model):
     title = models.CharField(max_length=100)
     code = models.CharField(max_length=20, unique=True)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
-    job_description = models.TextField()
+    job_description = models.TextField(null=True,blank=True)
     is_active = models.BooleanField(default=True)
     minimum_salary = models.DecimalField(max_digits=10, decimal_places=2)
     maximum_salary = models.DecimalField(max_digits=10, decimal_places=2)
-    requirements = models.TextField(blank=True)
+    requirements = models.TextField(null=True,blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     def __str__(self):
         return f"{self.title} ({self.department.name})"
@@ -185,6 +225,7 @@ class Employment(models.Model):
     bank_account = models.CharField(max_length=50)
     tax_id = models.CharField(max_length=50)
     is_active = models.BooleanField(default=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     def __str__(self):
         return f"{self.employee} - {self.position}"
@@ -197,6 +238,7 @@ class WorkHistory(models.Model):
     end_date = models.DateField(null=True, blank=True)
     salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     reason_for_leaving = models.TextField(blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     class Meta:
         verbose_name_plural = "Work Histories"
@@ -213,12 +255,29 @@ ATTENDANCE_STATUS_CHOICES = [
 
 
 class Attendance(models.Model):
+    OVERTIME_TYPE_CHOICES = [
+        ('WEEKDAY', 'Weekday'),
+        ('WEEKEND', 'Weekend'),
+        ('HOLIDAY', 'Holiday'),
+        ('NIGHT', 'Night Shift'),
+    ]
+
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     date = models.DateField()
     check_in = models.TimeField(null=True, blank=True)
     check_out = models.TimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=ATTENDANCE_STATUS_CHOICES, default='Present')
     notes = models.TextField(blank=True)
+
+    # Overtime fields
+    regular_hours = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    overtime_hours = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    overtime_type = models.CharField(max_length=20, choices=OVERTIME_TYPE_CHOICES, blank=True)
+    overtime_rate = models.DecimalField(max_digits=5, decimal_places=2, default=1.5)
+    overtime_approved = models.BooleanField(default=False)
+    overtime_approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, 
+                                           null=True, blank=True, related_name='approved_overtimes')
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     class Meta:
         unique_together = ('employee', 'date')
@@ -247,6 +306,7 @@ class Leave(models.Model):
     approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_leaves')
     date_applied = models.DateTimeField(auto_now_add=True)
     date_approved = models.DateTimeField(null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     class Meta:
         ordering = ['-start_date']
@@ -268,6 +328,7 @@ class JobOpening(models.Model):
     requirements = models.TextField()
     salary_range = models.CharField(max_length=100)
     created_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     def __str__(self):
         return f"{self.position} - {self.status}"
@@ -291,6 +352,7 @@ class Applicant(models.Model):
     applied_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=APPLICANT_STATUS_CHOICES, default='Applied')
     notes = models.TextField(blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     
     
@@ -304,12 +366,14 @@ class PerformanceReview(models.Model):
     review_period_start = models.DateField()
     review_period_end = models.DateField()
     review_date = models.DateField()
-    overall_rating = models.DecimalField(max_digits=3, decimal_places=1)
+    max_rating_point = models.DecimalField(max_digits=3,decimal_places=1,null=True, blank=True)
+    overall_rating = models.DecimalField(max_digits=3, decimal_places=1,null=True, blank=True)
     strengths = models.TextField()
     areas_for_improvement = models.TextField()
     comments = models.TextField(blank=True)
     is_approved = models.BooleanField(default=False)
     next_review_date = models.DateField(null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     
     
@@ -321,7 +385,7 @@ GOAL_STATUS_CHOICES = [
     ('Not Started', 'Not Started'),('In Progress', 'In Progress'),('Completed', 'Completed'),
     ('On Hold', 'On Hold'),('Cancelled', 'Cancelled'),]
 class Goal(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    #employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField()
     start_date = models.DateField()
@@ -329,10 +393,19 @@ class Goal(models.Model):
     status = models.CharField(max_length=20, choices=GOAL_STATUS_CHOICES, default='Not Started')
     progress = models.PositiveIntegerField(default=0)
     key_result = models.TextField()
-    review = models.ForeignKey(PerformanceReview, on_delete=models.SET_NULL, null=True, blank=True)
+    #review = models.ForeignKey(PerformanceReview, on_delete=models.SET_NULL, null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     def __str__(self):
         return f"{self.employee}: {self.title}"
+
+class EmployeeGoal(models.Model):
+    employee = models.ForeignKey(Employee,on_delete=models.CASCADE)
+    goal = models.ForeignKey(Goal,on_delete=models.CASCADE)
+    max_rating_point = models.DecimalField(max_digits=3,decimal_places=1,null=True, blank=True)
+    overall_rating = models.DecimalField(max_digits=3, decimal_places=1,null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+
 
  
     
@@ -346,6 +419,7 @@ class Document(models.Model):
     #expiry_date = models.DateField(null=True, blank=True)
     description = models.TextField(blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     
     def __str__(self):
@@ -361,6 +435,7 @@ class Training(models.Model):
     location = models.CharField(max_length=100)
     max_participants = models.PositiveIntegerField()
     participants = models.ManyToManyField(Employee, through='TrainingAttendance')
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     def __str__(self):
         return self.name
@@ -369,11 +444,147 @@ class TrainingAttendance(models.Model):
     training = models.ForeignKey(Training, on_delete=models.CASCADE)
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     attended = models.BooleanField(default=False)
+    max_score = models.DecimalField(max_digits=3,decimal_places=1,null=True, blank=True)
     score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     feedback = models.TextField(blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     
     class Meta:
         unique_together = ('training', 'employee')
     
     def __str__(self):
         return f"{self.employee} - {self.training}"
+
+
+class PayrollCalendar(models.Model):
+    CALENDAR_CHOICES = [
+        ('GREGORIAN', 'Gregorian'),
+        ('ETHIOPIAN', 'Ethiopian'),
+    ]
+    
+    name = models.CharField(max_length=100)
+    calendar_type = models.CharField(max_length=10, choices=CALENDAR_CHOICES, default='GREGORIAN')
+    start_day = models.PositiveIntegerField(help_text="Day of month when payroll period starts")
+    payment_day = models.PositiveIntegerField(help_text="Day of month when payment is made")
+    is_active = models.BooleanField(default=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.name} ({self.calendar_type})"
+    
+
+class PayrollPeriod(models.Model):
+    calendar = models.ForeignKey(PayrollCalendar, on_delete=models.PROTECT)
+    name = models.CharField(max_length=100)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    payment_date = models.DateField()
+    is_closed = models.BooleanField(default=False)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    closed_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-start_date']
+        unique_together = ('calendar', 'start_date', 'end_date')
+    
+    def __str__(self):
+        return f"{self.name} ({self.start_date} to {self.end_date})"
+
+
+class Payroll(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('BANK', 'Bank Transfer'),
+        ('CASH', 'Cash'),
+        ('CHEQUE', 'Cheque'),
+        ('MOBILE', 'Mobile Money'),
+    ]
+    
+    employee = models.ForeignKey(Employee, on_delete=models.PROTECT)
+    period = models.ForeignKey(PayrollPeriod, on_delete=models.PROTECT)
+    basic_salary = models.DecimalField(max_digits=12, decimal_places=2)
+    gross_salary = models.DecimalField(max_digits=12, decimal_places=2)
+    total_deductions = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_additions = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    net_salary = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES)
+    is_paid = models.BooleanField(default=False)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    
+    class Meta:
+        unique_together = ('employee', 'period')
+        ordering = ['period', 'employee']
+    
+    def __str__(self):
+        return f"{self.employee} - {self.period} - {self.net_salary}"
+    
+
+
+class PayrollAdditionType(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    code = models.CharField(max_length=20, unique=True)
+    is_taxable = models.BooleanField(default=True)
+    is_recurring = models.BooleanField(default=False)
+    description = models.TextField(blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    
+    def __str__(self):
+        return self.name
+
+class PayrollDeductionType(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    code = models.CharField(max_length=20, unique=True)
+    is_tax_exempt = models.BooleanField(default=False)
+    is_recurring = models.BooleanField(default=False)
+    description = models.TextField(blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    
+    def __str__(self):
+        return self.name
+
+class PayrollAddition(models.Model):
+    payroll = models.ForeignKey(Payroll, on_delete=models.CASCADE, related_name='additions')
+    addition_type = models.ForeignKey(PayrollAdditionType, on_delete=models.PROTECT)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    description = models.TextField(blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.payroll}: {self.addition_type} - {self.amount}"
+
+class PayrollDeduction(models.Model):
+    payroll = models.ForeignKey(Payroll, on_delete=models.CASCADE, related_name='deductions')
+    deduction_type = models.ForeignKey(PayrollDeductionType, on_delete=models.PROTECT)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    description = models.TextField(blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.payroll}: {self.deduction_type} - {self.amount}"
+    
+
+class OvertimePolicy(models.Model):
+    OVERTIME_TYPE_CHOICES = [
+        ('WEEKDAY', 'Weekday'),
+        ('WEEKEND', 'Weekend'),
+        ('HOLIDAY', 'Holiday'),
+        ('NIGHT', 'Night Shift'),
+    ]
+    
+    name = models.CharField(max_length=100)
+    overtime_type = models.CharField(max_length=10, choices=OVERTIME_TYPE_CHOICES)
+    rate = models.DecimalField(max_digits=5, decimal_places=2, help_text="Multiplier of base salary")
+    minimum_hours = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    is_active = models.BooleanField(default=True)
+    effective_date = models.DateField()
+    description = models.TextField(blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    
+    class Meta:
+        verbose_name_plural = "Overtime Policies"
+        unique_together = ('overtime_type', 'effective_date')
+    
+    def __str__(self):
+        return f"{self.name} ({self.overtime_type} - {self.rate}x)"

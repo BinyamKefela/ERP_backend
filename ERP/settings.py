@@ -42,6 +42,15 @@ INSTALLED_APPS = [
     'HRM.apps.HrmConfig',
     'drf_yasg',
     'auditlog',
+
+    'rest_framework.authtoken',
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    #'auditlog',
     
 ]
 
@@ -53,6 +62,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'ERP.urls'
@@ -144,3 +155,68 @@ SWAGGER_SETTINGS = {
     },
     'USE_SESSION_AUTH': False,
 }
+
+
+#--------------------email settings-----------------------------------------------
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'ketsebaotertumo@gmail.com'
+EMAIL_SUBJECT_PREFIX = 'Astedader ERP'
+EMAIL_HOST_PASSWORD = 'vhyaunypmaksffdr'
+DEFAULT_FROM_EMAIL = 'ASTEDADER ERP <noreply@example.com>'
+
+
+import os
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+
+
+
+#-------------------------------Authentication settings------------------------------------
+
+AUTH_USER_MODEL = 'HRM.User'
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+#ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # Tells allauth there's no username
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+SOCIALACCOUNT_AUTO_SIGNUP = True
+
+DB_TABLE_PREFIXES = {
+    'auth': '',  # Change the prefix for the auth app
+}
+
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+
+
+REST_FRAMEWORK = {
+    
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    "DEFAULT_PERMISSION_CLASSES":(
+        "rest_framework.permissions.IsAuthenticated",
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'HRM.api.custom_pagination.CustomPagination',
+    'PAGE_SIZE': 10,
+    
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+}
+
