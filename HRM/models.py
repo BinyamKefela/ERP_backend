@@ -62,8 +62,7 @@ class Company(models.Model):
     )
     base_currency = models.CharField(max_length=3, default='USD')
     timezone = models.CharField(max_length=50, default='UTC')
-    company_type = models.CharField(choices=[('private', 'private'), ('public', 'public'),('military an.
-     public','military and public')], max_length=10, default='Private')
+    company_type = models.CharField(choices=[('private', 'private'), ('public', 'public'),('military and public','military and public')], max_length=10, default='Private')
     
     
     def __str__(self):
