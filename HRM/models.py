@@ -62,6 +62,9 @@ class Company(models.Model):
     )
     base_currency = models.CharField(max_length=3, default='USD')
     timezone = models.CharField(max_length=50, default='UTC')
+    company_type = models.CharField(choices=[('private', 'private'), ('public', 'public'),('military an.
+     public','military and public')], max_length=10, default='Private')
+    
     
     def __str__(self):
         return self.name
@@ -588,3 +591,40 @@ class OvertimePolicy(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.overtime_type} - {self.rate}x)"
+    
+
+class TaxRate(models.Model):
+    minimum_income = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    maximum_income = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    rate = models.DecimalField(max_digits=5, decimal_places=2, help_text="Percentage rate")
+    is_active = models.BooleanField(default=True)
+    description = models.TextField(null=True,blank=True)
+    
+    class Meta:
+        verbose_name_plural = "Tax Rates"
+        unique_together = ('minimum_income', 'maximum_income')
+    
+    def __str__(self):
+        return f"Tax rate - {self.rate}%"
+    
+
+class Deduction(models.Model):
+    minimum_income = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    maximum_income = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    deduction = models.DecimalField(max_digits=5, decimal_places=2, help_text="Percentage rate")
+    is_active = models.BooleanField(default=True)
+    description = models.TextField(null=True,blank=True)
+    
+    class Meta:
+        verbose_name_plural = "Tax Rates"
+        unique_together = ('minimum_income', 'maximum_income')
+    
+    def __str__(self):
+        return f"Deduction - {self.deduction}%"
+
+
+class Pension(models.Model):
+    PENSION_TYPES = [('private','private'),('public','public'),('military and police','military and police')]
+    pension_type = models.CharField(choices=PENSION_TYPES)
+    employee_pension = models.FloatField()
+    company_pension = models.FloatField()
