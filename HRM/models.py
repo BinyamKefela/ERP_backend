@@ -627,3 +627,10 @@ class Pension(models.Model):
     pension_type = models.CharField(choices=PENSION_TYPES)
     employee_pension = models.FloatField()
     company_pension = models.FloatField()
+
+
+class PayrollPolicy(models.Model):
+    WORKING_DAYS_POLICY_CHOICES = ['fixed 30 days','monthly days']
+    working_days_policy = models.CharField(max_length=100,choices=WORKING_DAYS_POLICY_CHOICES)
+    is_active = models.BooleanField(default=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
