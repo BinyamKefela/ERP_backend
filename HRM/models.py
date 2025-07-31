@@ -62,7 +62,7 @@ class Company(models.Model):
     )
     base_currency = models.CharField(max_length=3, default='USD')
     timezone = models.CharField(max_length=50, default='UTC')
-    company_type = models.CharField(choices=[('private', 'private'), ('public', 'public'),('military and public','military and public')], max_length=10, default='Private')
+    company_type = models.CharField(choices=[('private', 'private'), ('public', 'public'),('military and public','military and public')], max_length=100, default='Private')
     
     
     def __str__(self):
@@ -176,7 +176,7 @@ class Employee(models.Model):
     employment_type = models.CharField(max_length=100,choices=EMPLOYMENT_TYPE)
     status = models.CharField(max_length=100,choices=[('A','Active'),('I','Inactive')],default='A')
     profile_picture = models.FileField(upload_to=get_upload_path,validators=[validate_uploaded_image_extension],null=True,blank=True)
-
+    branch = models.ForeignKey('Branch', on_delete=models.SET_NULL, null=True, blank=True,related_name='branch_hired_at')
 
     emergency_contact_name = models.CharField(max_length=100,null=True,blank=True)
     emergency_contact_phone = models.CharField(max_length=100,null=True,blank=True)
@@ -624,13 +624,58 @@ class Deduction(models.Model):
 
 class Pension(models.Model):
     PENSION_TYPES = [('private','private'),('public','public'),('military and police','military and police')]
-    pension_type = models.CharField(choices=PENSION_TYPES)
+    pension_type = models.CharField(max_length=100,choices=PENSION_TYPES)
     employee_pension = models.FloatField()
     company_pension = models.FloatField()
 
 
 class PayrollPolicy(models.Model):
-    WORKING_DAYS_POLICY_CHOICES = ['fixed 30 days','monthly days']
+    WORKING_DAYS_POLICY_CHOICES = [('fixed 30 days','fixed 30 days'),('monthly days','monthly days')]
     working_days_policy = models.CharField(max_length=100,choices=WORKING_DAYS_POLICY_CHOICES)
     is_active = models.BooleanField(default=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+
+
+class Event(models.Model):
+    title = models.CharField(max_length=200,null=True,blank=True)
+    start_date = models.DateTimeField(null=True,blank=True)
+    end_date = models.DateTimeField(null=True,blank=True)
+    description = models.TextField(null=True,blank=True)
+    location = models.CharField(max_length=200,null=True,blank=True)
+
+class Branch(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    #code = models.CharField(max_length=10, unique=True)
+    address = models.CharField(max_length=200, null=True, blank=True)
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
+    manager = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True,related_name='branch_manager')
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)    
+
+    def __str__(self):
+        return self.name
+    
+
+class Transfer(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    from_branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='transfers_from')
+    to_branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='transfers_to')
+    transfer_date = models.DateField()
+    reason = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Rejected', 'Rejected')], default='Pending')
+    approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_transfers')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Termination(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    termination_date = models.DateField()
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Rejected', 'Rejected')], default='Pending')
+    approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_terminations')
+    created_at = models.DateTimeField(auto_now_add=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.employee} - {self.termination_date}"
