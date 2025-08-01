@@ -22,6 +22,18 @@ from .api.training_attendance import *
 from .api.employee_goal import *
 from .api.payroll_calendar import *
 from.api.payroll_period import *
+from .api.overtime_policy import *
+from .api.tax_rate import *
+from .api.payroll_addition_type import *
+from .api.payroll_addition import *
+from .api.payroll_deduction_type import *
+from .api.payroll_deduction import *
+from .api.pension import *
+from .api.payroll_policy import *
+from .api.event import *
+from .api.branch import *
+from .api.transfer import *
+from .api.termination import *
 
 urlpatterns = [
 
@@ -224,6 +236,98 @@ urlpatterns = [
   path("post_payroll_period",PayrollPeriodCreateView.as_view(),name="post_payroll_period"),
   path("update_payroll_period/<int:id>",PayrollPeriodUpdateView.as_view(),name="update_payroll_period"),
   path("delete_payroll_period/<int:id>",PayrollPeriodDestroyView.as_view(),name="delete_payroll_period"),
+
+
+  #-----------------------------------------overtime policy routes-------------------------------------------
+
+  path("get_overtime_policys", OvertimePolicyListView.as_view(), name="get_overtime_policys"),
+  path("get_overtime_policy/<int:id>",OvertimePolicyRetrieveView.as_view(),name='get_overtime_policy'),
+  path("post_overtime_policy",OvertimePolicyCreateView.as_view(),name="post_overtime_policy"),
+  path("update_overtime_policy/<int:id>",OvertimePolicyUpdateView.as_view(),name="update_overtime_policy"),
+  path("delete_overtime_policy/<int:id>",OvertimePolicyDestroyView.as_view(),name="delete_overtime_policy"),
+
+  #-----------------------------------------tax rate routes-------------------------------------------
+  path("get_tax_rates", TaxRateListView.as_view(), name="get_tax_rates"),
+  path("get_tax_rate/<int:id>", TaxRateRetrieveView.as_view(), name='get_tax_rate'),
+  path("post_tax_rate", TaxRateCreateView.as_view(), name="post_tax_rate"),
+  path("update_tax_rate/<int:id>", TaxRateUpdateView.as_view(), name="update_tax_rate"),
+  path("delete_tax_rate/<int:id>", TaxRateDestroyView.as_view(), name="delete_tax_rate"),
+
+
+  #-----------------------------------------payroll addition type routes-------------------------------------------
+  path("get_payroll_addition_types", PayrollAdditionTypeListView.as_view(), name="get_payroll_addition_types"),
+  path("get_payroll_addition_type/<int:id>", PayrollAdditionTypeRetrieveView.as_view(), name='get_payroll_addition_type'),
+  path("post_payroll_addition_type", PayrollAdditionTypeCreateView.as_view(), name="post_payroll_addition_type"),
+  path("update_payroll_addition_type/<int:id>", PayrollAdditionTypeUpdateView.as_view(), name="update_payroll_addition_type"),
+  path("delete_payroll_addition_type/<int:id>", PayrollAdditionTypeDestroyView.as_view(), name="delete_payroll_addition_type"), 
   
-       
+  #-----------------------------------------payroll addition routes-------------------------------------------
+  path("get_payroll_additions", PayrollAdditionListView.as_view(), name="get_payroll_additions"),
+  path("get_payroll_addition/<int:id>", PayrollAdditionRetrieveView.as_view(), name='get_payroll_addition'),
+  path("post_payroll_addition", PayrollAdditionCreateView.as_view(), name="post_payroll_addition"),
+  path("update_payroll_addition/<int:id>", PayrollAdditionUpdateView.as_view(), name="update_payroll_addition"),
+  path("delete_payroll_addition/<int:id>", PayrollAdditionDestroyView.as_view(), name="delete_payroll_addition"),
+
+  #-----------------------------------------payroll deduction type routes-------------------------------------------
+  path("get_payroll_deduction_types", PayrollDeductionTypeListView.as_view() , name="get_payroll_deduction_types"),
+  path("get_payroll_deduction_type/<int:id>", PayrollDeductionTypeRetrieveView.as_view(), name='get_payroll_deduction_type'),
+  path("post_payroll_deduction_type", PayrollDeductionTypeCreateView.as_view(), name="post_payroll_deduction_type"),
+  path("update_payroll_deduction_type/<int:id>", PayrollDeductionTypeUpdateView.as_view(), name="update_payroll_deduction_type"),
+  path("delete_payroll_deduction_type/<int:id>", PayrollDeductionTypeDestroyView.as_view(), name="delete_payroll_deduction_type"),  
+  
+
+  #-----------------------------------------payroll deduction routes-------------------------------------------
+  path("get_payroll_deductions", PayrollDeductionListView.as_view(), name="get_payroll_deductions"),
+  path("get_payroll_deduction/<int:id>", PayrollDeductionRetrieveView.as_view(), name='get_payroll_deduction'),
+  path("post_payroll_deduction", PayrollDeductionCreateView.as_view(), name="post_payroll_deduction"),
+  path("update_payroll_deduction/<int:id>", PayrollDeductionUpdateView.as_view(), name="update_payroll_deduction"),
+  path("delete_payroll_deduction/<int:id>", PayrollDeductionDestroyView.as_view(), name="delete_payroll_deduction"),
+
+
+  #-----------------------------------------Pension routes-------------------------------------------
+  path("get_pensions", PensionListView.as_view(), name="get_pensions"),
+  path("get_pension/<int:id>", PensionRetrieveView.as_view(), name='get_pension'),
+  path("post_pension", PensionCreateView.as_view(), name="post_pension"),
+  path("update_pension/<int:id>", PensionUpdateView.as_view(), name="update_pension"),
+  path("delete_pension/<int:id>", PensionDestroyView.as_view(), name="delete_pension"),
+
+
+  #-----------------------------------------Payroll Policy routes-------------------------------------------
+  path("get_payroll_policys", PayrollPolicyListView.as_view(), name="get_payroll_policys"),
+  path("get_payroll_policy/<int:id>", PayrollPolicyRetrieveView.as_view(), name='get_payroll_policy'),
+  path("post_payroll_policy", PayrollPolicyCreateView.as_view(), name="post_payroll_policy"),
+  path("update_payroll_policy/<int:id>", PayrollPolicyUpdateView.as_view(), name="update_payroll_policy"),
+  path("delete_payroll_policy/<int:id>", PayrollPolicyDestroyView.as_view(), name="delete_payroll_policy"),
+
+ 
+  #-----------------------------------------Event routes-------------------------------------------
+  path("get_events", EventListView.as_view(), name="get_events"),
+  path("get_event/<int:id>", EventRetrieveView.as_view(), name='get_event'),
+  path("post_event", EventCreateView.as_view(), name="post_event"),
+  path("update_event/<int:id>", EventUpdateView.as_view(), name="update_event"),
+  path("delete_event/<int:id>", EventDestroyView.as_view(), name="delete_event"),
+
+  #-----------------------------------------Branch routes-------------------------------------------
+  path("get_branches", BranchListView.as_view(), name="get_branches"),
+  path("get_branch/<int:id>", BranchRetrieveView.as_view(), name='get_branch'),
+  path("post_branch", BranchCreateView.as_view(), name="post_branch"),
+  path("update_branch/<int:id>", BranchUpdateView.as_view(), name="update_branch"),
+  path("delete_branch/<int:id>", BranchDestroyView.as_view(), name="delete_branch"),
+
+
+  #-----------------------------------------transfer routes-------------------------------------------
+  path("get_transfers", TransferListView.as_view(), name="get_transfers"),
+  path("get_transfer/<int:id>", TransferRetrieveView.as_view(), name='get_transfer'),
+  path("post_transfer", TransferCreateView.as_view(), name="post_transfer"),
+  path("update_transfer/<int:id>", TransferUpdateView.as_view(), name="update_transfer"),
+  path("delete_transfer/<int:id>", TransferDestroyView.as_view(), name="delete_transfer"),
+
+
+  #-----------------------------------------termination routes-------------------------------------------
+  path("get_terminations", TerminationListView.as_view(), name="get_terminations"),
+  path("get_termination/<int:id>", TerminationRetrieveView.as_view(), name='get_termination'),
+  path("post_termination", TerminationCreateView.as_view(), name="post_termination"),
+  path("update_termination/<int:id>", TerminationUpdateView.as_view(), name="update_termination"),
+  path("delete_termination/<int:id>", TerminationDestroyView.as_view(), name="delete_termination"),
+
 ]

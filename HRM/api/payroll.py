@@ -59,11 +59,11 @@ def calculate_net_salary(employee,payroll_period):
     #payroll_period = PayrollPeriod.objects.filter(id=payroll_period_id).first()
     working_days_policy = PayrollPolicy.objects.filter(company=employee.company,is_active=True).first()
     if working_days_policy.working_days_policy == PayrollPolicy.WORKING_DAYS_POLICY_CHOICES[1]:
-        return calculate_total_net_salary(employee.gross_slary,employee.company)/30*get_total_working_days(employee.id,payroll_period.id,employee.company.id) 
+        return calculate_total_net_salary(employee.gross_salary,employee.company)/30*get_total_working_days(employee.id,payroll_period.id,employee.company.id) 
     else:
         import calendar
         from datetime import datetime
-        return calculate_total_net_salary(employee.gross_slary,employee.company)/calendar.monthrange(datetime.date(end_date).year,datetime.strptime(end_date).month)*get_total_working_days(employee.id,payroll_period.id,employee.company.id) 
+        return calculate_total_net_salary(employee.gross_salary,employee.company)/calendar.monthrange(datetime.date(end_date).year,datetime.strptime(end_date).month)*get_total_working_days(employee.id,payroll_period.id,employee.company.id) 
 
 
 

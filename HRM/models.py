@@ -275,7 +275,7 @@ class Attendance(models.Model):
     regular_hours = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     overtime_hours = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     overtime_type = models.CharField(max_length=20, choices=OVERTIME_TYPE_CHOICES, blank=True)
-    overtime_rate = models.DecimalField(max_digits=5, decimal_places=2, default=1.5)
+    #overtime_rate = models.DecimalField(max_digits=5, decimal_places=2, default=1.5)
     overtime_approved = models.BooleanField(default=False)
     overtime_approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, 
                                            null=True, blank=True, related_name='approved_overtimes')
@@ -576,10 +576,11 @@ class OvertimePolicy(models.Model):
     ]
     
     name = models.CharField(max_length=100)
-    overtime_type = models.CharField(max_length=10, choices=OVERTIME_TYPE_CHOICES)
+    overtime_type = models.CharField(max_length=10, choices=OVERTIME_TYPE_CHOICES,unique=True)
     rate = models.DecimalField(max_digits=5, decimal_places=2, help_text="Multiplier of base salary")
     minimum_hours = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     is_active = models.BooleanField(default=True)
+    hourly_rate = models.FloatField(default=0, help_text="Hourly rate for overtime calculation")
     effective_date = models.DateField()
     description = models.TextField(blank=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
@@ -666,7 +667,6 @@ class Transfer(models.Model):
     status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Rejected', 'Rejected')], default='Pending')
     approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_transfers')
     created_at = models.DateTimeField(auto_now_add=True)
-
 
 class Termination(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)

@@ -197,3 +197,68 @@ class PayrollPeriodSerializer(serializers.ModelSerializer):
     class Meta:
         model = PayrollPeriod
         fields = "__all__"
+
+class OvertimePolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OvertimePolicy
+        fields = "__all__"
+
+class TaxRateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaxRate
+        fields = "__all__"
+
+
+class PayrollAdditionTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PayrollAdditionType
+        fields = "__all__"
+
+class PayrollAdditionSerializer(serializers.ModelSerializer):
+    addition_type = serializers.SlugRelatedField(slug_field="name", queryset=PayrollAdditionType.objects.all())
+
+    class Meta:
+        model = PayrollAddition
+        fields = "__all__"
+
+class PayrollDeductionTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PayrollDeductionType
+        fields = "__all__"
+
+class PayrollDeductionSerializer(serializers.ModelSerializer):
+    deduction_type = serializers.SlugRelatedField(slug_field="name", queryset=PayrollDeductionType.objects.all())
+
+    class Meta:
+        model = PayrollDeduction
+        fields = "__all__"
+
+class PensionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pension
+        fields = "__all__"
+
+class PayrollPolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PayrollPolicy
+        fields = "__all__"    
+
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = "__all__"
+
+class BranchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Branch
+        fields = "__all__"
+
+class TransferSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transfer
+        fields = "__all__"
+
+class TerminationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Termination
+        fields = "__all__"   
