@@ -130,6 +130,9 @@ class User(AbstractBaseUser,PermissionsMixin):
                 os.remove(self.profile_picture.path)
         return super().save(*args, **kwargs)
 
+    class Meta:
+        unique_together = ('email', 'company')
+
 
 auditlog.register(User)
 
@@ -650,7 +653,7 @@ class Branch(models.Model):
     address = models.CharField(max_length=200, null=True, blank=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
-    manager = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True,related_name='branch_manager')
+    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,related_name='branch_manager')
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)    
 

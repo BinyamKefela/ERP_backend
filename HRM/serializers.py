@@ -11,6 +11,17 @@ User = get_user_model()
 #this is a class used to customize the JWT token obtaining since we need to send the permission list to the user
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
+    @classmethod
+    def get_token(self, user):
+        token = super().get_token(user)
+        # Add custom claims
+        #token['username'] = user.username
+        token['email'] = user.email
+        #token['first_name'] = user.first_name
+        #token['last_name'] = user.last_name
+        token['company'] = user.company.name if user.company else None
+        return token
+
     username_field = "email"
     
     def validate(self, attrs):
@@ -35,6 +46,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         #permissions = user.get_all_permissions()
         data = super().validate(attrs)
         data['permissions'] = list(user.get_all_permissions())
+        data['company'] = user.company.name if user.company else None
+        data['email'] = user.email
         data['groups'] = list(user.groups.values_list('name',flat=True))
         return data
     

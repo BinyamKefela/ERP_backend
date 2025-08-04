@@ -29,7 +29,7 @@ from rest_framework_simplejwt.views import (TokenObtainPairView,TokenRefreshView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('swagger/', schema_view.with_ui('swagger',cache_timeout=0), name='schema-swagger-ui'),
-    path('hrm/api/', include('HRM.urls')),
+    path('api/hrm/', include('HRM.urls')),
 
 
     path('api/token',CustomTokenObtainPairView.as_view(),name='token_obtain_pair'),

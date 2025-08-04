@@ -17,7 +17,7 @@ from django.db.models import F, Value
 from django.db.models.functions import Concat
 import json
 from django.conf import settings
-from ..models import EmailResetCode
+from ..models import EmailResetCode,Company
 
 from rest_framework.permissions import AllowAny
 from django.core.mail import send_mail
@@ -33,6 +33,7 @@ from google.auth.transport import requests
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 load_dotenv()
@@ -82,8 +83,14 @@ class UserListView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated,DjangoModelPermissions]
-    filter_backends = [OrderingFilter,SearchFilter]
+    filter_backends = [OrderingFilter,SearchFilter,DjangoFilterBackend]
     search_fields = [field.name for field in User._meta.fields]
+    filterset_fields = {
+    #'name': ['exact', 'icontains'],
+    #'name':['exact','icontains'],
+    'company__name': ['exact'],
+    }
+
     ordering_fields = [field.name for field in User._meta.fields]
     ordering = ['id']
     pagination_class = CustomPagination
@@ -371,6 +378,7 @@ def update_user(request,id):
     is_superuser = request.data.get("is_superuser")
     profile_picture = request.FILES.get("profile_picture")
     password = request.data.get("password")
+    company = request.data.get("company")
 
     if user_permissions:
         permissions = Permission.objects.filter(codename__in=user_permissions)
@@ -396,6 +404,9 @@ def update_user(request,id):
         user.profile_picture = profile_picture
     if password:
         user.set_password(password)
+    if company:
+        company = Company.objects.filter(id=company).first()
+        user.company = company
 
     user.save()
 

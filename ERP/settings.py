@@ -25,7 +25,12 @@ SECRET_KEY = 'django-insecure-76ur=+_p%uo%yh9ltiyr(@l$qa5u7*t3@qj5@sq7&v5ty46*r6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+#ALLOWED_HOSTS = []
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+ALLOWED_HOSTS = ['192.168.0.165','192.168.0.178','localhost','192.168.0.101','127.0.0.1','parking.astedaderpms.com']
+
 
 
 # Application definition
