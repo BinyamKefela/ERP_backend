@@ -51,7 +51,7 @@ class CustomUserManager(BaseUserManager):
 
 class Company(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    subdomain = models.CharField(max_length=50, unique=True)
+    subdomain = models.CharField(max_length=50)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,related_name='company_owner')
@@ -682,3 +682,87 @@ class Termination(models.Model):
     
     def __str__(self):
         return f"{self.employee} - {self.termination_date}"
+    
+
+
+class SubscriptionPlan(models.Model):
+    SERVICES_INCLUDED = [
+        ('HR Management', 'HR Management'),
+        ('Payroll Management', 'Payroll Management'),
+        ('Attendance Tracking', 'Attendance Tracking'),
+        ('Leave Management', 'Leave Management'),
+        ('Performance Reviews', 'Performance Reviews'),
+        ('Recruitment', 'Recruitment'),
+        ('Training Management', 'Training Management'),
+        ('Document Management', 'Document Management'),
+        ('Employee Self-Service Portal', 'Employee Self-Service Portal'),
+    ]
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    #services_included = models.CharField(max_length=255, blank=True,choices=SERVICES_INCLUDED)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    max_users = models.PositiveIntegerField(default=0)
+    duration_months = models.PositiveIntegerField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    #company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+    
+class SubscriptionPlanService(models.Model):
+    SERVICES_INCLUDED = [
+        ('HR Management', 'HR Management'),
+        ('Payroll Management', 'Payroll Management'),
+        ('Attendance Tracking', 'Attendance Tracking'),
+        ('Leave Management', 'Leave Management'),
+        ('Performance Reviews', 'Performance Reviews'),
+        ('Recruitment', 'Recruitment'),
+        ('Training Management', 'Training Management'),
+        ('Document Management', 'Document Management'),
+        ('Employee Self-Service Portal', 'Employee Self-Service Portal'),
+    ]
+    subscription_plan = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE, related_name='services')
+    service_name = models.CharField(max_length=100,choices=SERVICES_INCLUDED)
+    #description = models.TextField(blank=True,null=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.subscription_plan.name} - {self.service_name}"      
+    
+
+class Subscription(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.PROTECT)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.company.name} - {self.plan.name}"
+
+def validate_subscription_payment_picture(value):
+    valid_extensions = ['.png','.jpg','.jpeg','.PNG','.JPG','.JPEG']
+    ext = os.path.splitext(value.name)[1]
+    if not ext in valid_extensions:
+        raise ValidationError('Unsupported filed extension')
+        
+
+def get_subscription_payment_image_upload_path(instance,filename):
+    new_file_name = "subscription_payments/"+f'{filename}'
+    return new_file_name
+   
+
+class SubscriptionPayment(models.Model):
+    subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE, related_name='payments')
+    image = models.FileField(upload_to=get_subscription_payment_image_upload_path,validators=[validate_subscription_payment_picture],null=True,blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_date = models.DateField()
+    payment_method = models.CharField(max_length=50, choices=[('Credit Card', 'Credit Card'), ('Bank Transfer', 'Bank Transfer'), ('PayPal', 'PayPal')])
+    transaction_id = models.CharField(max_length=100, unique=True)
+    is_successful = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.subscription.company.name} - {self.amount} on {self.payment_date}"

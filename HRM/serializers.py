@@ -125,10 +125,20 @@ class CompanySerializer(serializers.ModelSerializer):
         model = Company
         fields = "__all__"
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['owner'] = UserSerializer(instance.owner).data if instance.owner else None
+        return representation
+
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = "__all__"
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['user'] = UserSerializer(instance.user).data if instance.user else None
+        representation['company'] = CompanySerializer(instance.company).data if instance.company else None
 
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -275,3 +285,27 @@ class TerminationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Termination
         fields = "__all__"   
+
+class SubscriptionPlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubscriptionPlan
+        fields = "__all__"
+
+    
+    
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = "__all__"
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['plan'] = SubscriptionPlanSerializer(instance.plan).data if instance.plan else None
+        representation['company'] = CompanySerializer(instance.company).data if instance.company else None
+        return representation
+    
+class SubscriptionPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubscriptionPayment
+        fields = "__all__"

@@ -34,6 +34,8 @@ from .api.event import *
 from .api.branch import *
 from .api.transfer import *
 from .api.termination import *
+from .api.subscription_plan import *
+from .api.subscription_payment import *
 
 urlpatterns = [
 
@@ -64,6 +66,7 @@ urlpatterns = [
   path('reset_password_phone',reset_password_phone,name='reset_password_phone'),
 
   path("change_password",change_password,name="change_password"),
+  path("sign_up_company",sign_up_company,name="sign_up_company"),
 
 
 
@@ -329,5 +332,19 @@ urlpatterns = [
   path("post_termination", TerminationCreateView.as_view(), name="post_termination"),
   path("update_termination/<int:id>", TerminationUpdateView.as_view(), name="update_termination"),
   path("delete_termination/<int:id>", TerminationDestroyView.as_view(), name="delete_termination"),
+
+  #-----------------------------------------Subscription Plan routes-------------------------------------------
+  path("get_subscription_plans", SubscrptionPlanListView.as_view(), name="get_subscription_plans"),
+  path("get_subscription_plan/<int:id>", SubscrptionPlanRetrieveView.as_view(), name='get_subscription_plan'),
+  path("post_subscription_plan", SubscrptionPlanCreateView.as_view(), name="post_subscription_plan"),
+  path("update_subscription_plan/<int:id>", SubscrptionPlanUpdateView.as_view(), name="update_subscription_plan"),
+  path("delete_subscription_plan/<int:id>", SubscrptionPlanDestroyView.as_view(), name="delete_subscription_plan"),
+
+  #-----------------------------------------Subscription Payment routes-------------------------------------------
+  path("get_subscription_payments", SubscriptionPaymentListView.as_view(), name="get_subscription_payments"),
+  path("get_subscription_payment/<int:id>", SubscriptionPaymentRetrieveView.as_view(), name='get_subscription_payment'),
+  path("post_subscription_payment", SubscriptionPaymentCreateView.as_view(), name="post_subscription_payment"),
+  path("update_subscription_payment/<int:id>", SubscriptionPaymentUpdateView.as_view(), name="update_subscription_payment"),
+  path("delete_subscription_payment/<int:id>", SubscriptionPaymentDestroyView.as_view(), name="delete_subscription_payment"),
 
 ]

@@ -32,8 +32,8 @@ class EmployeeListView(generics.ListAPIView):
     ordering = ['id']
     filterset_fields = {
     #'name': ['exact', 'icontains'],
-    'name':['exact','icontains'],
-    'owner__email': ['exact','icontains'],
+    
+    'user__email': ['exact','icontains'],
     'company__name': ['exact','icontains'],
      }
 

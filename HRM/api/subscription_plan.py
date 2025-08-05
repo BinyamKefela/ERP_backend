@@ -1,8 +1,8 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
 from rest_framework.filters import OrderingFilter,SearchFilter
-from ..models import Branch
-from ..serializers import BranchSerializer
+from ..models import SubscriptionPlan
+from ..serializers import SubscriptionPlanSerializer
 from HRM.api.custom_pagination import CustomPagination
 import datetime
 from rest_framework.response import Response
@@ -17,50 +17,46 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-class BranchListView(generics.ListAPIView):
+class SubscrptionPlanListView(generics.ListAPIView):
     """
-    API endpoint that allows Branch to be viewed.
+    API endpoint that allows SubscrptionPlan to be viewed.
     """
-    queryset = Branch.objects.all()
+    queryset = SubscriptionPlan.objects.all()
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
-    search_fields = [field.name for field in Branch._meta.fields]
-    ordering_fields = [field.name for field in Branch._meta.fields]
+    search_fields = [field.name for field in SubscriptionPlan._meta.fields]
+    ordering_fields = [field.name for field in SubscriptionPlan._meta.fields]
     pagination_class = CustomPagination
-    serializer_class = BranchSerializer
+    serializer_class = SubscriptionPlanSerializer
     ordering = ['id']
     filterset_fields = {
     #'name': ['exact', 'icontains'],
-    'name':['exact','icontains'],
-    'address':['exact','icontains'],
-    'phone':['exact','icontains'],
-    'email':['exact','icontains'],
-    'manager__email':['exact','icontains'],
-    'company__name': ['exact','icontains'],
+    'is_active': ['exact'],
+    #'company__name': ['exact','icontains'],
     }
 
-class BranchRetrieveView(generics.RetrieveAPIView):
-    queryset = Branch.objects.all()
-    serializer_class = BranchSerializer
+class SubscrptionPlanRetrieveView(generics.RetrieveAPIView):
+    queryset = SubscriptionPlan.objects.all()
+    serializer_class = SubscriptionPlanSerializer
     permission_classes = [IsAuthenticated,DjangoModelPermissions]
     lookup_field = ['id']
 
-class BranchUpdateView(generics.UpdateAPIView):
-    queryset = Branch.objects.all()
-    serializer_class = BranchSerializer
+class SubscrptionPlanUpdateView(generics.UpdateAPIView):
+    queryset = SubscriptionPlan.objects.all()
+    serializer_class = SubscriptionPlanSerializer
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
     lookup_field = 'id'
 
-class BranchDestroyView(generics.DestroyAPIView):
-    queryset = Branch.objects.all()
-    serializer_class = BranchSerializer
+class SubscrptionPlanDestroyView(generics.DestroyAPIView):
+    queryset = SubscriptionPlan.objects.all()
+    serializer_class = SubscriptionPlanSerializer
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
     lookup_field = 'id'
 
 
-class BranchCreateView(generics.CreateAPIView):
-    queryset = Branch.objects.all()
-    serializer_class = BranchSerializer
+class SubscrptionPlanCreateView(generics.CreateAPIView):
+    queryset = SubscriptionPlan.objects.all()
+    serializer_class = SubscriptionPlanSerializer
     permission_classes = [IsAuthenticated,DjangoModelPermissions]
 
 

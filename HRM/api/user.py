@@ -463,4 +463,122 @@ def verify_email(request, token):
             return Response({'message': 'Your email has already been verified.'}, status=status.HTTP_200_OK)
     except EmailVerification.DoesNotExist:
         return Response({'error': 'Invalid verification link.'}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def sign_up_company(request):
+        if User.objects.filter(email=request.data.get("email")).count()>0:
+            return Response({"error":"This email already exists in the system"},status=status.HTTP_403_FORBIDDEN)
+        serializer = UserSerializer(data=request.data)
+    #if serializer.is_valid():
+        #if the user already signed up but didn't verify his account, delete verfication UUID's
+        if User.objects.filter(email=request.data.get("email"),is_active=False).count() > 0:
+            EmailVerification.objects.filter(user=User.objects.filter(email=request.data.get("email"),is_active=False).first()).delete()
+            verification = EmailVerification.objects.create(user=User.objects.filter(email=request.data.get("email"),is_active=False).first())
+        
+        #if the user hasn't signed up, create him first
+        else:
+            if User.objects.filter(email=request.data.get("email")).count() > 0:
+                return Response({"error":"This email already exists in the system"},status=status.HTTP_403_FORBIDDEN)
+            user = User()
+            user.email = request.data.get("email")
+            user.is_active=False
+            
+            if request.data.get("phone_number"):
+               user.phone_number = request.data.get("phone_number")
+            if request.data.get("first_name"):
+               user.first_name = request.data.get("first_name")
+            if request.data.get("middle_name"):
+               user.middle_name = request.data.get("middle_name")
+            if request.data.get("last_name"):
+               user.last_name = request.data.get("last_name")
+            
+            try:
+               
+               company = Company()
+               company.name = request.data.get("name")
+               company.subdomain = request.data.get("subdomain")
+               company.is_active = False#request.data.get('is_active')
+               company.calendar_type = request.data.get('calendar_type')
+               company.base_currency = request.data.get("base_currency")
+               company.timezone = request.data.get("time_zone")
+               company.company_type = request.data.get("company_type")
+               company.owner = user
+               
+               
+               from ..models import Subscription,SubscriptionPlan
+               subscription = Subscription()
+               subscription.plan = SubscriptionPlan.objects.get(id=request.data.get("subscription_plan"))
+               subscription.start_date = request.data.get("start_date")
+               subscription.status = "pending"
+               subscription.created_at = datetime.datetime.now()
+               subscription.company = company
+
+               from ..models import SubscriptionPlanService
+
+               
+               
+
+               user.set_password(request.data.get("password"))
+               user.save()
+               user.groups.set(Group.objects.filter(name="owner"))
+               company.save()
+               subscription.save()
+
+               for services_included in request.data.get("services_included",[]):
+                   subscription_plan_service = SubscriptionPlanService()
+                   subscription_plan_service.service_name = services_included
+                   subscription_plan_service.subscription_plan = subscription.plan
+                   subscription_plan_service.is_active = True
+                   subscription_plan_service.save()
+
+               '''notifiction = Notification()
+               notifiction.user = user
+               notifiction.notification_type = "subscription created"
+               #notifiction.payment = instance
+               notifiction.message = "a new subscription made by user "+str(user.email)
+               notifiction.is_read = False
+               notifiction.created_at = datetime.datetime.now()
+               notifiction.save()'''
+            except Exception as e:
+                return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            user.save()
+            #if serializer.is_valid():
+            #    user = serializer.save(is_active=False)  # Initially set user as inactive
+            verification = EmailVerification.objects.create(user=user)
+        from urllib.parse import urljoin
+        current_site = request.build_absolute_uri('/')
+        mail_subject = 'Verify your email address'
+        relative_link = "api/verify-email/"+str(verification.token)#reverse('verify_email', kwargs={'token': str(verification.token)})
+        absolute_url = urljoin(current_site,relative_link) #f'{current_site}{relative_link}'  # Adjust protocol if needed
+        message = f'Hi ,\n\nPlease click on the link below to verify your email address and complete your signup:\n\n{absolute_url}'
+        send_mail(mail_subject, message, EMAIL_HOST_USER, [request.data.get("email")])
+        return Response({'message': 'Registration successful. Please check your email to verify your account.'}, status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_company(request):
+    if not (request.user.has_perm('auth.view_user') or request.user.is_superuser):
+        return Response({"error":"You are not allowed to verify a company"},status=status.HTTP_403_FORBIDDEN)
+    company = request.data.get("company")
+    subscription = request.data.get("subscription")
+    subscription_payment = request.data.get("subscription_payment")
+    if not company or not subscription or not subscription_payment:
+        return Response({"error":"Please provide company, subscription and subscription_payment"},status=status.HTTP_400_BAD_REQUEST)
+    from ..models import Subscription,SubscriptionPayment
+    if not subscription:
+        return Response({"error":"Please provide subscription"},status=status.HTTP_400_BAD_REQUEST)
+    subscription = Subscription.objects.filter(id=subscription).first()
+    subscription_payment = SubscriptionPayment.objects.filter(id=subscription_payment).first()
+    subscription.is_active = True
+    subscription_payment.is_successful = True
+    subscription.save()    
+    subscription.company.is_active = True
+    subscription.company.save()
+    subscription_payment.is_successful = True
+
+    return Response({"message":"company verified successfully!"},status=status.HTTP_200_OK)
+
    
