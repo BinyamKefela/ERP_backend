@@ -36,6 +36,8 @@ from .api.transfer import *
 from .api.termination import *
 from .api.subscription_plan import *
 from .api.subscription_payment import *
+from .api.subscription_plan_service import *
+from .api.subscription import *
 
 urlpatterns = [
 
@@ -336,7 +338,7 @@ urlpatterns = [
   #-----------------------------------------Subscription Plan routes-------------------------------------------
   path("get_subscription_plans", SubscrptionPlanListView.as_view(), name="get_subscription_plans"),
   path("get_subscription_plan/<int:id>", SubscrptionPlanRetrieveView.as_view(), name='get_subscription_plan'),
-  path("post_subscription_plan", SubscrptionPlanCreateView.as_view(), name="post_subscription_plan"),
+  path("post_subscription_plan", create_subscription_plan, name="post_subscription_plan"),
   path("update_subscription_plan/<int:id>", SubscrptionPlanUpdateView.as_view(), name="update_subscription_plan"),
   path("delete_subscription_plan/<int:id>", SubscrptionPlanDestroyView.as_view(), name="delete_subscription_plan"),
 
@@ -346,5 +348,23 @@ urlpatterns = [
   path("post_subscription_payment", SubscriptionPaymentCreateView.as_view(), name="post_subscription_payment"),
   path("update_subscription_payment/<int:id>", SubscriptionPaymentUpdateView.as_view(), name="update_subscription_payment"),
   path("delete_subscription_payment/<int:id>", SubscriptionPaymentDestroyView.as_view(), name="delete_subscription_payment"),
+
+  #------------------------------------------Subscription Plan Service routes---------------------------------------------
+
+
+  path("get_subscription_plan_service", SubscriptionPlanServiceListView.as_view(), name="get_subscription_plan_service"),
+  path("get_subscription_plan_service/<int:id>", SubscriptionPlanServiceRetrieveView.as_view(), name='get_subscription_plan_service'),
+  path("post_subscription_plan_service", SubscriptionPlanServiceCreateView.as_view(), name="post_subscription_plan_service"),
+  path("update_subscription_plan_service/<int:id>", SubscriptionPlanServiceUpdateView.as_view(), name="update_subscription_plan_service"),
+  path("delete_subscription_plan_service/<int:id>",SubscriptionPlanServiceDestroyView.as_view(), name="delete_subscription_plan_service"),
+
+  #-----------------------------------------Subscription routes-------------------------------------------------------
+
+  path("get_subscription", SubscriptionListView.as_view(), name="get_subscription_plan_service"),
+  path("get_subscription/<int:id>", SubscriptionRetrieveView.as_view(), name='get_subscription_plan_service'),
+  path("post_subscription", SubscriptionCreateView.as_view(), name="post_subscription_plan_service"),
+  path("update_subscription/<int:id>", SubscriptionUpdateView.as_view(), name="update_subscription_plan_service"),
+  path("delete_subscription/<int:id>",SubscriptionDestroyView.as_view(), name="delete_subscription_plan_service"),
+
 
 ]

@@ -527,12 +527,13 @@ def sign_up_company(request):
                company.save()
                subscription.save()
 
-               for services_included in request.data.get("services_included",[]):
+               '''for services_included in request.data.get("services_included",[]):
                    subscription_plan_service = SubscriptionPlanService()
                    subscription_plan_service.service_name = services_included
                    subscription_plan_service.subscription_plan = subscription.plan
                    subscription_plan_service.is_active = True
-                   subscription_plan_service.save()
+                   subscription_plan_service.price = request.data.get('price')
+                   subscription_plan_service.save()'''
 
                '''notifiction = Notification()
                notifiction.user = user
@@ -581,4 +582,5 @@ def verify_company(request):
 
     return Response({"message":"company verified successfully!"},status=status.HTTP_200_OK)
 
-   
+
+  

@@ -700,7 +700,7 @@ class SubscriptionPlan(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     #services_included = models.CharField(max_length=255, blank=True,choices=SERVICES_INCLUDED)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    #price = models.DecimalField(max_digits=10, decimal_places=2)
     max_users = models.PositiveIntegerField(default=0)
     duration_months = models.PositiveIntegerField()
     is_active = models.BooleanField(default=True)
@@ -725,6 +725,7 @@ class SubscriptionPlanService(models.Model):
     subscription_plan = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE, related_name='services')
     service_name = models.CharField(max_length=100,choices=SERVICES_INCLUDED)
     #description = models.TextField(blank=True,null=True)
+    price = models.FloatField()
     is_active = models.BooleanField(default=True)
 
     def __str__(self):

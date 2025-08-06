@@ -291,6 +291,10 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
         model = SubscriptionPlan
         fields = "__all__"
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['services'] = SubscriptionPlanServiceSerializer(SubscriptionPlanService.objects.filter(subscription_plan=instance.id),many=True).data
+        return representation
     
     
 
@@ -308,4 +312,14 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 class SubscriptionPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubscriptionPayment
+        fields = "__all__"
+
+class SubscriptionPlanServiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubscriptionPlanService
+        fields = "__all__"
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
         fields = "__all__"
